@@ -1,15 +1,3 @@
-let knight = {
-    current: null,
-    prev: null,
-    distance: 0
-}
-
-let KnightFactory = (current) => {
-    current = current;
-    next = null;
-    return { current, next }
-}
-
 function buildBoard() {
     let board = [];
     
@@ -39,27 +27,10 @@ function containsSpot(arr, target) {
     }
 }
 
-function buildPath(root, next) {
-    root.next = next;
-}
-
 function knightMoves(start, end) {
     let board = buildBoard();
-    let x = start[0];
-    let y = start[1];
     let startIndex = findIndex(board, start);
     let endIndex = findIndex(board, end);
-
-    let potentialMoves = [
-        [x+2, y+1],
-        [x+1, y+2],
-        [x-1, y+2],
-        [x-2, y+1],
-        [x-2, y-1],
-        [x-1, y-2],
-        [x+1, y-2],
-        [x+2, y-1]
-    ];
 
     function findNextMove(index, x, y) {
         if (index == 0) return [x+2, y+1];
@@ -72,26 +43,61 @@ function knightMoves(start, end) {
         if (index == 7) return [x+2, y-1];
     }
 
+    let bfsInfo = [];
+    for (let i=0; i < board.length; i++) {
+        bfsInfo[i] = {
+            distance: null,
+            predecessor: null
+        }
+    }
+    bfsInfo[startIndex].distance = 0;
+
+    let adjList = [];
+    for (let i=0; i < board.length; i++) {
+        let neighbors = [];
+        for (let j=0; j < 8; j++) {
+            let neighbor = findNextMove(j,board[i][0],board[i][1]);
+            if (containsSpot(board, neighbor)) {
+                neighbors.push(findIndex(board, neighbor));
+            }
+        }
+        adjList[i] = neighbors;
+    }
+
     let queue = [startIndex];
     let u;
 
     while (u != endIndex) {
         u = queue.shift();
-        for (let i=0; i < 8; i++) {
-            x = board[u][0];
-            y = board[u][1];
-            let v = findNextMove(i, x, y);
+        for (let i=0; i < adjList[u].length; i++) {
+            let vIndex = adjList[u][i];
 
-            if (containsSpot(board, v)) {
-                let indexV = findIndex(board, v);
+            if (vIndex === endIndex) {
+                bfsInfo[vIndex].predecessor = u;
+                let path = [];
 
-                if (indexV == endIndex) {
-                    return "REACHED THE END!";
-                } else {
-                    queue.push(indexV);
+                function constructPath(item, index) {
+                    if (item.predecessor === null) return;
+                    if (item.predecessor != null) {
+                        path.push(board[index]);
+                        constructPath(bfsInfo[item.predecessor], item.predecessor);
+                }
+                }
+
+                constructPath(bfsInfo[vIndex], vIndex);
+                result = path.reverse();
+                result = path.splice(0,0,start);
+                console.log(`You made it in ${path.length - 1} moves! Here's your path:`);
+                return path;
+            } else {
+                if (bfsInfo[vIndex].distance == null) {
+                    bfsInfo[vIndex].distance = bfsInfo[u].distance + 1;
+                    bfsInfo[vIndex].predecessor = u;
+                    queue.push(vIndex);
                 }
             }
-
         }
     }
 }
+
+
